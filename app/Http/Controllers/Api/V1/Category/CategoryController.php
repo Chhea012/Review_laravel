@@ -10,10 +10,11 @@ use Illuminate\Http\Request;
 class CategoryController extends Controller
 {
     public function index()
-    {
+    {   
+        $category = Category::all();
         return response()->json([
             'status' => 'success',
-            'categories' => CategoryResource::collection(Category::all())
+            'categories' => CategoryResource::collection($category)
         ]);
     }
 
