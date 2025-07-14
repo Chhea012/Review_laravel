@@ -2,7 +2,9 @@
 
 
 namespace App\Http\Controllers\Api\V1\Post;
+
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Post\PostRequest;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use App\Http\Resources\PostResource;
@@ -14,33 +16,32 @@ class PostController extends Controller
      */
     public function index()
     {
-        $post = Post::all();
+        $posts = Post::all();
         return response()->json([
-            'status' => 'successfully',
-            'post' =>$post
+            'status' => 'success',
+            'posts' => PostResource::collection($posts)
         ]);
     }
+
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(PostRequest $request)
     {
-        $post = new Post();
-        $post->title = $request->title;
-        $post->description = $request->description;
-        $post->category_id = $request->category_id;
-        $post->save();
+        $validated = $request->validated();
+        $post = Post::create($validated);
         return response()->json([
-            'status' => 'create post successfully',
-            'post' => $post
-        ]);
+            'status' => 'Post created successfully',
+            'post' => new PostResource($post)
+        ], 201);
     }
+
 
     /**
      * Display the specified resource.
      */
-    public function show( string $id)
+    public function show(string $id)
     {
         $post = Post::find($id);
         if (!$post) {
@@ -48,7 +49,7 @@ class PostController extends Controller
         }
         return response()->json([
             'status' => ' successfully',
-            'post' => new  PostResource($post) 
+            'post' => new  PostResource($post)
         ]);
     }
 
@@ -59,17 +60,23 @@ class PostController extends Controller
     {
         $post = Post::find($id);
         if (!$post) {
-            return response()->json(['message ' => 'Not found post'], 404);
+            return response()->json(['message' => 'Post not found'], 404);
         }
-        $post->title = $request->title ?? $post->title;
-        $post->description = $request->description ?? $post->description;
-        $post->category_id = $request->category_id ?? $post->category_id;
-        $post->save();
+
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'category_id' => 'sometimes|required|exists:categories,id',
+        ]);
+
+        $post->update($validated);
+
         return response()->json([
-            'status' => 'Update post successfully',
-            'post' => $post
+            'status' => 'Post updated successfully',
+            'post' => new PostResource($post)
         ]);
     }
+
 
     /**
      * Remove the specified resource from storage.
